@@ -21,7 +21,17 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold text-primary">MBA</span>
+            <img 
+              src="/favicon_mono_black.png" 
+              alt="Maryam Bilal Logo" 
+              className="h-8 w-8 dark:hidden"
+            />
+            <img 
+              src="/favicon_mono_white.png" 
+              alt="Maryam Bilal Logo" 
+              className="h-8 w-8 hidden dark:block"
+            />
+            <span className="text-xl font-bold text-primary">Maryam Bilal</span>
           </Link>
 
           {/* Desktop Navigation */}
