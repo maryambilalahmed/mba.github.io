@@ -1,0 +1,217 @@
+# Sveltia CMS Configuration
+# Authentication: Use Personal Access Token (PAT) - enter when prompted in the CMS
+
+backend:
+  name: github
+  repo: maryambilalahmed/personal-portfolio # UPDATE THIS to your actual repo
+  branch: main
+
+# Where media files will be stored
+media_folder: "public/uploads"
+public_folder: "/uploads"
+
+# Site URL for preview links
+site_url: https://maryambilalahmed.github.io
+
+# Local development support
+local_backend: true
+
+# Collections
+collections:
+  # ===== SITE SETTINGS =====
+  - name: "settings"
+    label: "Site Settings"
+    icon: "settings"
+    files:
+      - name: "site"
+        label: "Site Info"
+        file: "src/data/siteData.ts"
+        fields:
+          - { label: "Name", name: "name", widget: "string" }
+          - { label: "Tagline", name: "tagline", widget: "string" }
+          - { label: "Email", name: "email", widget: "string" }
+          - { label: "LinkedIn URL", name: "linkedin", widget: "string" }
+          - { label: "Location", name: "location", widget: "string" }
+          - { label: "Phone", name: "phone", widget: "string" }
+          - { label: "Introduction", name: "intro", widget: "text" }
+          - label: "Achievements"
+            name: "achievements"
+            widget: "list"
+            field: { label: "Achievement", name: "achievement", widget: "string" }
+          - label: "Highlight Cards"
+            name: "highlightCards"
+            widget: "list"
+            fields:
+              - { label: "Title", name: "title", widget: "string" }
+              - { label: "Description", name: "description", widget: "string" }
+              - { label: "Link", name: "link", widget: "string" }
+
+  # ===== EDUCATION =====
+  - name: "education"
+    label: "Education"
+    icon: "school"
+    folder: "content/education"
+    create: true
+    slug: "{{slug}}"
+    format: "json"
+    fields:
+      - { label: "Institution", name: "institution", widget: "string" }
+      - { label: "Degree", name: "degree", widget: "string" }
+      - { label: "Period", name: "period", widget: "string" }
+      - { label: "Details", name: "details", widget: "text", required: false }
+
+  # ===== HONORS =====
+  - name: "honors"
+    label: "Honors & Awards"
+    icon: "trophy"
+    folder: "content/honors"
+    create: true
+    slug: "{{slug}}"
+    format: "json"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Year", name: "year", widget: "string", required: false }
+      - { label: "Organization", name: "organization", widget: "string", required: false }
+
+  # ===== EXPERIENCES =====
+  - name: "experiences"
+    label: "Experiences"
+    icon: "briefcase"
+    folder: "content/experiences"
+    create: true
+    slug: "{{slug}}"
+    format: "json"
+    sortable_fields: ["period", "role"]
+    fields:
+      - { label: "Role", name: "role", widget: "string" }
+      - { label: "Organization", name: "organization", widget: "string" }
+      - { label: "Period", name: "period", widget: "string" }
+      - { label: "Description", name: "description", widget: "text" }
+      - label: "Order"
+        name: "order"
+        widget: "number"
+        required: false
+        hint: "Lower numbers appear first"
+
+  # ===== PROJECTS =====
+  - name: "projects"
+    label: "Projects"
+    icon: "rocket"
+    folder: "content/projects"
+    create: true
+    slug: "{{slug}}"
+    format: "json"
+    sortable_fields: ["date", "title"]
+    fields:
+      - { label: "ID", name: "id", widget: "string" }
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Description", name: "description", widget: "text" }
+      - { label: "Date", name: "date", widget: "string" }
+      - label: "Tags"
+        name: "tags"
+        widget: "list"
+        field: { label: "Tag", name: "tag", widget: "string" }
+      - { label: "Featured Image", name: "image", widget: "image", required: false }
+
+  # ===== RESEARCH =====
+  - name: "research"
+    label: "Research"
+    icon: "search"
+    folder: "content/research"
+    create: true
+    slug: "{{slug}}"
+    format: "json"
+    fields:
+      - { label: "ID", name: "id", widget: "string" }
+      - { label: "Title", name: "title", widget: "string" }
+      - label: "Type"
+        name: "type"
+        widget: "select"
+        options: ["Primary Research", "Essay", "Academic Competition"]
+      - { label: "Summary", name: "summary", widget: "text" }
+      - label: "Status"
+        name: "status"
+        widget: "select"
+        options: ["In Progress", "Submitted", "Published", "Completed"]
+      - { label: "Interviews Count", name: "interviews", widget: "string", required: false }
+
+  # ===== CERTIFICATIONS =====
+  - name: "certifications"
+    label: "Certifications"
+    icon: "certificate"
+    folder: "content/certifications"
+    create: true
+    slug: "{{slug}}"
+    format: "json"
+    fields:
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Provider", name: "provider", widget: "string" }
+      - { label: "Date", name: "date", widget: "string", required: false }
+      - label: "Status"
+        name: "status"
+        widget: "select"
+        options: ["Completed", "In Progress"]
+        default: "Completed"
+      - { label: "Description", name: "description", widget: "text", required: false }
+
+  # ===== BLOG POSTS =====
+  - name: "blog"
+    label: "Blog Posts"
+    icon: "edit"
+    folder: "content/blog"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    format: "frontmatter"
+    extension: "md"
+    sortable_fields: ["date", "title"]
+    fields:
+      - { label: "ID", name: "id", widget: "string" }
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Date", name: "date", widget: "datetime" }
+      - { label: "Excerpt", name: "excerpt", widget: "text" }
+      - label: "Tags"
+        name: "tags"
+        widget: "list"
+        field: { label: "Tag", name: "tag", widget: "string" }
+      - { label: "Featured Image", name: "image", widget: "image", required: false }
+      - { label: "Body", name: "body", widget: "markdown" }
+
+  # ===== SKILLS =====
+  - name: "skills"
+    label: "Skills"
+    icon: "tool"
+    files:
+      - name: "skills"
+        label: "Skills"
+        file: "content/skills.json"
+        fields:
+          - label: "Research Skills"
+            name: "research"
+            widget: "list"
+            field: { label: "Skill", name: "skill", widget: "string" }
+          - label: "Communication Skills"
+            name: "communication"
+            widget: "list"
+            field: { label: "Skill", name: "skill", widget: "string" }
+          - label: "Tools"
+            name: "tools"
+            widget: "list"
+            field: { label: "Tool", name: "tool", widget: "string" }
+          - label: "Languages"
+            name: "languages"
+            widget: "list"
+            field: { label: "Language", name: "language", widget: "string" }
+
+  # ===== INTERESTS =====
+  - name: "interests"
+    label: "Interests"
+    icon: "heart"
+    files:
+      - name: "interests"
+        label: "Interests"
+        file: "content/interests.json"
+        fields:
+          - label: "Interests"
+            name: "interests"
+            widget: "list"
+            field: { label: "Interest", name: "interest", widget: "string" }
