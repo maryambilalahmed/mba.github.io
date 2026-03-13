@@ -26,6 +26,7 @@ export default function LinkFormPage({ postId, params }: LinkFormProps) {
   const currentPostId = postId ?? params?.id;
   const [loading, setLoading] = useState(!!currentPostId);
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -37,7 +38,16 @@ export default function LinkFormPage({ postId, params }: LinkFormProps) {
     tags: [] as string[],
     featured: false,
     embed_code: "",
+    published_at: "",
   });
+
+  function normalizeSlug(raw: string) {
+    return raw
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
+  }
 
   async function loadLink() {
     try {
@@ -61,6 +71,9 @@ export default function LinkFormPage({ postId, params }: LinkFormProps) {
           tags: link.tags || [],
           featured: link.featured || false,
           embed_code: link.embed_code || "",
+          published_at: link.published_at
+            ? new Date(link.published_at).toISOString().slice(0, 16)
+            : "",
         });
       }
     } catch (err) {
@@ -80,12 +93,13 @@ export default function LinkFormPage({ postId, params }: LinkFormProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setFormError("");
 
     try {
       const supabase = createClient();
 
       const payload = {
-        slug: formData.slug || null,
+        slug: formData.slug ? normalizeSlug(formData.slug) : null,
         title: formData.title,
         url: formData.url,
         source: formData.source,
@@ -93,18 +107,18 @@ export default function LinkFormPage({ postId, params }: LinkFormProps) {
         tags: formData.tags,
         featured: formData.featured,
         embed_code: formData.embed_code || null,
-        published_at: new Date().toISOString(),
+        published_at: formData.published_at
+          ? new Date(formData.published_at).toISOString()
+          : new Date().toISOString(),
       };
 
       if (currentPostId) {
         const { error } = await supabase
           .from("selected_links")
-          // @ts-expect-error - Supabase types issue
           .update(payload)
           .eq("id", currentPostId);
         if (error) throw error;
       } else {
-        // @ts-expect-error - Supabase types issue
         const { error } = await supabase.from("selected_links").insert(payload);
         if (error) throw error;
       }
@@ -113,7 +127,11 @@ export default function LinkFormPage({ postId, params }: LinkFormProps) {
       router.refresh();
     } catch (err) {
       console.error("Error saving selected link:", err);
-      alert("Error saving selected link. Check console for details.");
+      const message =
+        typeof err === "object" && err && "code" in err && err.code === "23505"
+          ? "Slug already exists. Please choose a unique slug."
+          : "Could not save selected link. Please review fields and try again.";
+      setFormError(message);
     } finally {
       setSaving(false);
     }
@@ -137,6 +155,12 @@ export default function LinkFormPage({ postId, params }: LinkFormProps) {
       </Link>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {formError ? (
+          <p className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+            {formError}
+          </p>
+        ) : null}
+
         <Card>
           <CardHeader>
             <CardTitle>{currentPostId ? "Edit Link" : "Create Link"}</CardTitle>
@@ -150,7 +174,7 @@ export default function LinkFormPage({ postId, params }: LinkFormProps) {
               <Input
                 id="slug"
                 value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, slug: normalizeSlug(e.target.value) })}
                 placeholder="optional-link-slug"
               />
             </div>
@@ -226,6 +250,16 @@ export default function LinkFormPage({ postId, params }: LinkFormProps) {
                 }
                 placeholder="<iframe ...></iframe>"
                 rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="published_at">Publish Date</Label>
+              <Input
+                id="published_at"
+                type="datetime-local"
+                value={formData.published_at}
+                onChange={(e) => setFormData({ ...formData, published_at: e.target.value })}
               />
             </div>
 

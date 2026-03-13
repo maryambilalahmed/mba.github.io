@@ -44,7 +44,7 @@ export default function ResearchAdminPage() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setPosts(data || []);
+      setPosts((data || []) as ResearchPost[]);
     } catch (err) {
       console.error("Error loading research posts:", err);
     } finally {

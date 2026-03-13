@@ -16,6 +16,17 @@ ALTER TABLE research_posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE selected_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_submissions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "blog_posts_public_read" ON blog_posts;
+DROP POLICY IF EXISTS "blog_posts_admin_all" ON blog_posts;
+DROP POLICY IF EXISTS "projects_public_read" ON projects;
+DROP POLICY IF EXISTS "projects_admin_all" ON projects;
+DROP POLICY IF EXISTS "research_posts_public_read" ON research_posts;
+DROP POLICY IF EXISTS "research_posts_admin_all" ON research_posts;
+DROP POLICY IF EXISTS "selected_links_public_read" ON selected_links;
+DROP POLICY IF EXISTS "selected_links_admin_all" ON selected_links;
+DROP POLICY IF EXISTS "contact_submissions_public_insert" ON contact_submissions;
+DROP POLICY IF EXISTS "contact_submissions_admin_all" ON contact_submissions;
+
 -- ============================================================================
 -- BLOG POSTS POLICIES
 -- ============================================================================
@@ -23,7 +34,7 @@ ALTER TABLE contact_submissions ENABLE ROW LEVEL SECURITY;
 -- Allow public read of published posts
 CREATE POLICY "blog_posts_public_read"
   ON blog_posts FOR SELECT
-  USING (status = 'published');
+  USING (status = 'published' AND (published_at IS NULL OR published_at <= now()));
 
 -- Allow authenticated admins full access
 CREATE POLICY "blog_posts_admin_all"
@@ -38,7 +49,7 @@ CREATE POLICY "blog_posts_admin_all"
 -- Allow public read of published projects
 CREATE POLICY "projects_public_read"
   ON projects FOR SELECT
-  USING (status = 'published');
+  USING (status = 'published' AND (published_at IS NULL OR published_at <= now()));
 
 -- Allow authenticated admins full access
 CREATE POLICY "projects_admin_all"
@@ -53,7 +64,7 @@ CREATE POLICY "projects_admin_all"
 -- Allow public read of published posts
 CREATE POLICY "research_posts_public_read"
   ON research_posts FOR SELECT
-  USING (status = 'published');
+  USING (status = 'published' AND (published_at IS NULL OR published_at <= now()));
 
 -- Allow authenticated admins full access
 CREATE POLICY "research_posts_admin_all"
@@ -68,7 +79,7 @@ CREATE POLICY "research_posts_admin_all"
 -- Allow public read of all links (no draft concept)
 CREATE POLICY "selected_links_public_read"
   ON selected_links FOR SELECT
-  USING (true);
+  USING (published_at IS NULL OR published_at <= now());
 
 -- Allow authenticated admins write access
 CREATE POLICY "selected_links_admin_all"

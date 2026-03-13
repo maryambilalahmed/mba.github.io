@@ -44,7 +44,7 @@ export default function LinksAdminPage() {
         .order("published_at", { ascending: false });
 
       if (error) throw error;
-      setLinks(data || []);
+      setLinks((data || []) as SelectedLink[]);
     } catch (err) {
       console.error("Error loading links:", err);
     } finally {

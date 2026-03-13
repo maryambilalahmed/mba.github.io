@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS selected_links (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   slug text UNIQUE,
   title text NOT NULL,
-  url text NOT NULL,
+  url text NOT NULL CHECK (url ~ '^https?://'),
   source text NOT NULL,
   excerpt text,
   tags text[] DEFAULT '{}',
@@ -118,7 +118,7 @@ CREATE INDEX IF NOT EXISTS selected_links_featured_idx ON selected_links(feature
 CREATE TABLE IF NOT EXISTS contact_submissions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
-  email text NOT NULL,
+  email text NOT NULL CHECK (position('@' in email) > 1),
   subject text NOT NULL,
   message text NOT NULL,
   status text CHECK (status IN ('new', 'reviewed', 'archived')) DEFAULT 'new',
@@ -128,3 +128,8 @@ CREATE TABLE IF NOT EXISTS contact_submissions (
 CREATE INDEX IF NOT EXISTS contact_submissions_status_idx ON contact_submissions(status);
 CREATE INDEX IF NOT EXISTS contact_submissions_email_idx ON contact_submissions(email);
 CREATE INDEX IF NOT EXISTS contact_submissions_created_at_idx ON contact_submissions(created_at DESC);
+
+CREATE UNIQUE INDEX IF NOT EXISTS blog_posts_slug_lower_unique_idx ON blog_posts (lower(slug));
+CREATE UNIQUE INDEX IF NOT EXISTS projects_slug_lower_unique_idx ON projects (lower(slug));
+CREATE UNIQUE INDEX IF NOT EXISTS research_posts_slug_lower_unique_idx ON research_posts (lower(slug));
+CREATE UNIQUE INDEX IF NOT EXISTS selected_links_slug_lower_unique_idx ON selected_links (lower(slug)) WHERE slug IS NOT NULL;

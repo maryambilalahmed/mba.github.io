@@ -44,7 +44,7 @@ export default function ProjectsAdminPage() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setProjects(data || []);
+      setProjects((data || []) as Project[]);
     } catch (err) {
       console.error("Error loading projects:", err);
     } finally {

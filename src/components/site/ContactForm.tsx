@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +13,7 @@ export function ContactForm() {
     email: "",
     subject: "",
     message: "",
+    website: "",
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
@@ -26,21 +26,27 @@ export function ContactForm() {
     setErrorMessage("");
 
     try {
-      const supabase = createClient();
-
-      // @ts-expect-error - Supabase types issue
-      const { error } = await supabase.from("contact_submissions").insert({
-        name: formData.name,
-        email: formData.email,
-        subject: formData.subject,
-        message: formData.message,
-        status: "new",
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+          website: formData.website,
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const payload = (await response.json()) as { error?: string };
+        throw new Error(payload.error || "Failed to submit form");
+      }
 
       setStatus("success");
-      setFormData({ name: "", email: "", subject: "", message: "" });
+      setFormData({ name: "", email: "", subject: "", message: "", website: "" });
 
       // Reset success message after 5 seconds
       setTimeout(() => setStatus("idle"), 5000);
@@ -72,6 +78,22 @@ export function ContactForm() {
           <AlertDescription>{errorMessage}</AlertDescription>
         </Alert>
       )}
+
+      <div className="space-y-2">
+        <label htmlFor="website" className="sr-only">
+          Website
+        </label>
+        <Input
+          id="website"
+          type="text"
+          value={formData.website}
+          onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+          tabIndex={-1}
+          autoComplete="off"
+          className="hidden"
+          aria-hidden="true"
+        />
+      </div>
 
       <div className="space-y-2">
         <label htmlFor="name" className="block text-sm font-medium">

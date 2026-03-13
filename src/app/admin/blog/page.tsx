@@ -44,7 +44,7 @@ export default function BlogAdminPage() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setPosts(data || []);
+      setPosts((data || []) as BlogPost[]);
     } catch (err) {
       console.error("Error loading posts:", err);
     } finally {

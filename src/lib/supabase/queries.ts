@@ -1,24 +1,36 @@
-/**
- * Data access layer for editorial content from Supabase.
- * These functions replace file-based reading for blog, projects, research, links.
- */
-
+import getReadingTime from "reading-time";
 import { createClient } from "@supabase/supabase-js";
+import type { BlogPost, ExternalLinkItem, Project, ResearchPost } from "@/types/content";
+import type { Database } from "@/types/supabase";
+import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+const supabaseEnvReady =
+  !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+const supabase = supabaseEnvReady
+  ? createClient<Database>(getSupabasePublicEnv().url, getSupabasePublicEnv().anonKey)
+  : null;
+
+function getPublicClient() {
+  if (!supabase) {
+    return null;
+  }
+  return supabase;
+}
 
 // ============================================================================
 // BLOG POSTS
 // ============================================================================
 
 export async function getBlogPostsFromSupabase() {
-  const { data, error } = await supabase
+  const client = getPublicClient();
+  if (!client) return [];
+
+  const { data, error } = await client
     .from("blog_posts")
     .select("*")
     .eq("status", "published")
+    .or(`published_at.is.null,published_at.lte.${new Date().toISOString()}`)
     .order("published_at", { ascending: false });
 
   if (error) {
@@ -26,36 +38,39 @@ export async function getBlogPostsFromSupabase() {
     return [];
   }
 
-  return (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data?.map((post: any) => ({
+  const rows = (data || []) as Database["public"]["Tables"]["blog_posts"]["Row"][];
+
+  return rows.map((post): BlogPost => ({
       slug: post.slug,
       title: post.title,
       excerpt: post.excerpt,
       date: post.published_at || post.created_at,
       featured: post.featured,
       tags: post.tags,
-      coverImage: post.cover_image_url,
+      coverImage: post.cover_image_url || undefined,
       body: post.body,
-      readingTime: `${Math.ceil(post.body.split(/\s+/).length / 200)} min read`,
-    })) || []
-  );
+      readingTime: getReadingTime(post.body).text,
+    }));
 }
 
 export async function getBlogPostBySlugFromSupabase(slug: string) {
-  const { data, error } = await supabase
+  const client = getPublicClient();
+  if (!client) return null;
+
+  const { data, error } = await client
     .from("blog_posts")
     .select("*")
     .eq("slug", slug)
     .eq("status", "published")
+    .or(`published_at.is.null,published_at.lte.${new Date().toISOString()}`)
     .single();
 
   if (error || !data) {
     return null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const post = data as any;
+  const post = data as Database["public"]["Tables"]["blog_posts"]["Row"];
+
   return {
     slug: post.slug,
     title: post.title,
@@ -63,10 +78,10 @@ export async function getBlogPostBySlugFromSupabase(slug: string) {
     date: post.published_at || post.created_at,
     featured: post.featured,
     tags: post.tags,
-    coverImage: post.cover_image_url,
+    coverImage: post.cover_image_url || undefined,
     body: post.body,
-    readingTime: `${Math.ceil(post.body.split(/\s+/).length / 200)} min read`,
-  };
+    readingTime: getReadingTime(post.body).text,
+  } satisfies BlogPost;
 }
 
 // ============================================================================
@@ -74,10 +89,14 @@ export async function getBlogPostBySlugFromSupabase(slug: string) {
 // ============================================================================
 
 export async function getProjectsFromSupabase() {
-  const { data, error } = await supabase
+  const client = getPublicClient();
+  if (!client) return [];
+
+  const { data, error } = await client
     .from("projects")
     .select("*")
     .eq("status", "published")
+    .or(`published_at.is.null,published_at.lte.${new Date().toISOString()}`)
     .order("published_at", { ascending: false });
 
   if (error) {
@@ -85,40 +104,45 @@ export async function getProjectsFromSupabase() {
     return [];
   }
 
-  return (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data?.map((project: any) => ({
+  const rows = (data || []) as Database["public"]["Tables"]["projects"]["Row"][];
+
+  return rows.map((project): Project => ({
       slug: project.slug,
       title: project.title,
       excerpt: project.summary,
       date: project.published_at || project.created_at,
       featured: project.featured,
       tags: project.tags,
-      coverImage: project.cover_image_url,
+      coverImage: project.cover_image_url || undefined,
       body: project.body,
-      timeline: project.timeline,
-      role: project.role,
+      timeline: project.timeline || undefined,
+      role: project.role || undefined,
       tools: project.tools || [],
       impact: project.impact || [],
-      externalLinks: (project.links as Array<{ label: string; url: string }>) || [],
-    })) || []
-  );
+      externalLinks: Array.isArray(project.links)
+        ? (project.links as Array<{ label: string; url: string }>)
+        : [],
+    }));
 }
 
 export async function getProjectBySlugFromSupabase(slug: string) {
-  const { data, error } = await supabase
+  const client = getPublicClient();
+  if (!client) return null;
+
+  const { data, error } = await client
     .from("projects")
     .select("*")
     .eq("slug", slug)
     .eq("status", "published")
+    .or(`published_at.is.null,published_at.lte.${new Date().toISOString()}`)
     .single();
 
   if (error || !data) {
     return null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const project = data as any;
+  const project = data as Database["public"]["Tables"]["projects"]["Row"];
+
   return {
     slug: project.slug,
     title: project.title,
@@ -126,14 +150,16 @@ export async function getProjectBySlugFromSupabase(slug: string) {
     date: project.published_at || project.created_at,
     featured: project.featured,
     tags: project.tags,
-    coverImage: project.cover_image_url,
+    coverImage: project.cover_image_url || undefined,
     body: project.body,
-    timeline: project.timeline,
-    role: project.role,
+    timeline: project.timeline || undefined,
+    role: project.role || undefined,
     tools: project.tools || [],
     impact: project.impact || [],
-    externalLinks: (project.links as Array<{ label: string; url: string }>) || [],
-  };
+    externalLinks: Array.isArray(project.links)
+      ? (project.links as Array<{ label: string; url: string }>)
+      : [],
+  } satisfies Project;
 }
 
 // ============================================================================
@@ -141,10 +167,14 @@ export async function getProjectBySlugFromSupabase(slug: string) {
 // ============================================================================
 
 export async function getResearchPostsFromSupabase() {
-  const { data, error } = await supabase
+  const client = getPublicClient();
+  if (!client) return [];
+
+  const { data, error } = await client
     .from("research_posts")
     .select("*")
     .eq("status", "published")
+    .or(`published_at.is.null,published_at.lte.${new Date().toISOString()}`)
     .order("published_at", { ascending: false });
 
   if (error) {
@@ -152,40 +182,43 @@ export async function getResearchPostsFromSupabase() {
     return [];
   }
 
-  return (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data?.map((post: any) => ({
+  const rows = (data || []) as Database["public"]["Tables"]["research_posts"]["Row"][];
+
+  return rows.map((post): ResearchPost => ({
       slug: post.slug,
       title: post.title,
       excerpt: post.abstract,
       date: post.published_at || post.created_at,
       featured: post.featured,
       tags: post.tags,
-      coverImage: post.cover_image_url,
+      coverImage: post.cover_image_url || undefined,
       body: post.body,
-      type: post.publication_status,
+      type: post.publication_status || undefined,
       status: post.status,
       methods: [],
-      timeline: null,
+      timeline: undefined,
       impact: [],
-    })) || []
-  );
+    }));
 }
 
 export async function getResearchBySlugFromSupabase(slug: string) {
-  const { data, error } = await supabase
+  const client = getPublicClient();
+  if (!client) return null;
+
+  const { data, error } = await client
     .from("research_posts")
     .select("*")
     .eq("slug", slug)
     .eq("status", "published")
+    .or(`published_at.is.null,published_at.lte.${new Date().toISOString()}`)
     .single();
 
   if (error || !data) {
     return null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const post = data as any;
+  const post = data as Database["public"]["Tables"]["research_posts"]["Row"];
+
   return {
     slug: post.slug,
     title: post.title,
@@ -193,14 +226,14 @@ export async function getResearchBySlugFromSupabase(slug: string) {
     date: post.published_at || post.created_at,
     featured: post.featured,
     tags: post.tags,
-    coverImage: post.cover_image_url,
+    coverImage: post.cover_image_url || undefined,
     body: post.body,
-    type: post.publication_status,
+    type: post.publication_status || undefined,
     status: post.status,
     methods: [],
-    timeline: null,
+    timeline: undefined,
     impact: [],
-  };
+  } satisfies ResearchPost;
 }
 
 // ============================================================================
@@ -208,9 +241,13 @@ export async function getResearchBySlugFromSupabase(slug: string) {
 // ============================================================================
 
 export async function getSelectedLinksFromSupabase() {
-  const { data, error } = await supabase
+  const client = getPublicClient();
+  if (!client) return [];
+
+  const { data, error } = await client
     .from("selected_links")
     .select("*")
+    .or(`published_at.is.null,published_at.lte.${new Date().toISOString()}`)
     .order("published_at", { ascending: false });
 
   if (error) {
@@ -218,18 +255,17 @@ export async function getSelectedLinksFromSupabase() {
     return [];
   }
 
-  return (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data?.map((link: any) => ({
+  const rows = (data || []) as Database["public"]["Tables"]["selected_links"]["Row"][];
+
+  return rows.map((link): ExternalLinkItem => ({
       title: link.title,
       url: link.url,
       source: link.source,
       date: link.published_at || link.created_at,
-      excerpt: link.excerpt,
+      excerpt: link.excerpt || "",
       tags: link.tags,
       featured: link.featured,
-    })) || []
-  );
+    }));
 }
 
 // ============================================================================

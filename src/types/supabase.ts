@@ -64,6 +64,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       projects: {
         Row: {
@@ -132,6 +133,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       research_posts: {
         Row: {
@@ -194,6 +196,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       selected_links: {
         Row: {
@@ -238,6 +241,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       contact_submissions: {
         Row: {
@@ -267,6 +271,7 @@ export type Database = {
           status?: "new" | "reviewed" | "archived";
           created_at?: string;
         };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

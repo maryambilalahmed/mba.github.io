@@ -23,6 +23,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Loader, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { uploadAdminImage } from "@/lib/supabase/storage";
 
 interface ResearchFormProps {
   postId?: string;
@@ -49,6 +50,8 @@ export default function ResearchFormPage({ postId, params }: ResearchFormProps) 
   const currentPostId = postId ?? params?.id;
   const [loading, setLoading] = useState(!!currentPostId);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [formError, setFormError] = useState("");
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -64,9 +67,18 @@ export default function ResearchFormPage({ postId, params }: ResearchFormProps) 
     tags: [] as string[],
     status: "draft" as "draft" | "published",
     featured: false,
+    published_at: "",
     seo_title: "",
     seo_description: "",
   });
+
+  function normalizeSlug(raw: string) {
+    return raw
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
+  }
 
   async function loadPost() {
     try {
@@ -94,6 +106,9 @@ export default function ResearchFormPage({ postId, params }: ResearchFormProps) 
           tags: post.tags || [],
           status: post.status,
           featured: post.featured || false,
+          published_at: post.published_at
+            ? new Date(post.published_at).toISOString().slice(0, 16)
+            : "",
           seo_title: post.seo_title || "",
           seo_description: post.seo_description || "",
         });
@@ -115,12 +130,13 @@ export default function ResearchFormPage({ postId, params }: ResearchFormProps) 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setFormError("");
 
     try {
       const supabase = createClient();
 
       const payload = {
-        slug: formData.slug,
+        slug: normalizeSlug(formData.slug),
         title: formData.title,
         abstract: formData.abstract,
         body: formData.body,
@@ -135,18 +151,20 @@ export default function ResearchFormPage({ postId, params }: ResearchFormProps) 
         seo_title: formData.seo_title || null,
         seo_description: formData.seo_description || null,
         published_at:
-          formData.status === "published" ? new Date().toISOString() : null,
+          formData.status === "published"
+            ? formData.published_at
+              ? new Date(formData.published_at).toISOString()
+              : new Date().toISOString()
+            : null,
       };
 
       if (currentPostId) {
         const { error } = await supabase
           .from("research_posts")
-          // @ts-expect-error - Supabase types issue
           .update(payload)
           .eq("id", currentPostId);
         if (error) throw error;
       } else {
-        // @ts-expect-error - Supabase types issue
         const { error } = await supabase.from("research_posts").insert(payload);
         if (error) throw error;
       }
@@ -155,9 +173,27 @@ export default function ResearchFormPage({ postId, params }: ResearchFormProps) 
       router.refresh();
     } catch (err) {
       console.error("Error saving research post:", err);
-      alert("Error saving research post. Check console for details.");
+      const message =
+        typeof err === "object" && err && "code" in err && err.code === "23505"
+          ? "Slug already exists. Please choose a unique slug."
+          : "Could not save research post. Please review fields and try again.";
+      setFormError(message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleUploadCoverImage(file: File) {
+    setUploadingImage(true);
+    setFormError("");
+    try {
+      const publicUrl = await uploadAdminImage(file, "research");
+      setFormData((prev) => ({ ...prev, cover_image_url: publicUrl }));
+    } catch (err) {
+      console.error("Error uploading image:", err);
+      setFormError("Image upload failed. Ensure storage bucket and policies are configured.");
+    } finally {
+      setUploadingImage(false);
     }
   }
 
@@ -179,6 +215,12 @@ export default function ResearchFormPage({ postId, params }: ResearchFormProps) 
       </Link>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {formError ? (
+          <p className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+            {formError}
+          </p>
+        ) : null}
+
         <Card>
           <CardHeader>
             <CardTitle>{currentPostId ? "Edit Research Post" : "Create Research Post"}</CardTitle>
@@ -192,7 +234,7 @@ export default function ResearchFormPage({ postId, params }: ResearchFormProps) 
               <Input
                 id="slug"
                 value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, slug: normalizeSlug(e.target.value) })}
                 placeholder="my-research-post"
                 required
               />
@@ -299,6 +341,20 @@ export default function ResearchFormPage({ postId, params }: ResearchFormProps) 
                 }
                 placeholder="https://example.com/research-cover.jpg"
               />
+              <Input
+                type="file"
+                accept="image/*"
+                disabled={uploadingImage}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) {
+                    void handleUploadCoverImage(file);
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                {uploadingImage ? "Uploading image..." : "Optional: upload directly to Supabase Storage."}
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -333,6 +389,16 @@ export default function ResearchFormPage({ postId, params }: ResearchFormProps) 
                     <SelectItem value="published">Published</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="published_at">Publish Date</Label>
+                <Input
+                  id="published_at"
+                  type="datetime-local"
+                  value={formData.published_at}
+                  onChange={(e) => setFormData({ ...formData, published_at: e.target.value })}
+                />
               </div>
 
               <div className="flex items-end">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -30,12 +31,12 @@ export default function AdminLoginPage() {
       });
 
       if (signInError) {
-        setError(signInError.message = "Invalid credentials or user not found");
+        setError("Invalid credentials or user not found");
         return;
       }
 
-      // Redirect to admin dashboard
-      router.push("/admin/dashboard");
+      const nextPath = searchParams?.get("next") || "/admin/dashboard";
+      router.push(nextPath);
       router.refresh();
     } catch (err) {
       setError("An unexpected error occurred");
