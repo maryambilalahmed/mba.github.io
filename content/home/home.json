@@ -1,0 +1,36 @@
+{
+  "heroTitle": "Economics, research, and writing for real-world impact",
+  "heroSubtitle": "I am an A-Level student in Lahore studying economics and mathematics, building a long-term body of work at the intersection of happiness economics, social systems, and practical leadership.",
+  "positioning": "My work combines primary research, academic writing, and project execution. I care about evidence, clarity, and making complex ideas useful for people.",
+  "highlights": [
+    {
+      "label": "Interview-based research",
+      "value": "~38"
+    },
+    {
+      "label": "O-Level grades",
+      "value": "11 A* + 1 A"
+    },
+    {
+      "label": "Scholarship",
+      "value": "100% merit"
+    },
+    {
+      "label": "SAT score",
+      "value": "1420"
+    }
+  ],
+  "currentFocus": [
+    "Co-leading a mixed-methods project on the economics of happiness in Pakistan",
+    "Building structured case notes from field interviews and literature",
+    "Developing writing that connects economics with lived experience"
+  ],
+  "ctaPrimary": {
+    "label": "Explore research",
+    "href": "/research"
+  },
+  "ctaSecondary": {
+    "label": "Read writing",
+    "href": "/blog"
+  }
+}
